@@ -1,10 +1,16 @@
-# push
-# Beispiel-Skriptblöcke für die parallele Ausführung
-$job1 = { Invoke-RestMethod -Uri "https://api.example.com/data" }
-$job2 = { Invoke-Command -ComputerName "RemoteComputer" -ScriptBlock { param($path) Get-Content $path } -ArgumentList "C:\example.txt" }
+$jobs = @(
+    { Invoke-RestMethod -Uri "https://api.example.com/data" -ErrorAction Stop },
+    { Invoke-Command -ComputerName "RemoteComputer" -ScriptBlock { throw "Ein Fehler ist aufgetreten." } -ErrorAction Stop }
+)
 
-# Funktion aufrufen und Ergebnisse erhalten
-$results = Invoke-HBSJob -Jobs @($job1, $job2)
+$results = Invoke-HBSJob -Jobs $jobs
 
-# Ergebnisse ausgeben
-$results
+if ($results.Success) {
+    Write-Host "Alle Jobs wurden erfolgreich ausgeführt. Ergebnisse:"
+    $results.Results
+} else {
+    Write-Host "Einige Jobs sind fehlgeschlagen. Fehler:"
+    $results.Errors
+}
+
+Write-Host "Details siehe Log-Datei: HBSJobLog.txt"
